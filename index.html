@@ -170,6 +170,8 @@
     if(p === localStorage.getItem('pin')) cb(); else alert("REFUSÉ.");
   }
 
+
+  /*
   async function saveFace() {
     const overlay = document.getElementById('scan-overlay');
     overlay.style.display = 'flex';
@@ -184,6 +186,40 @@
     }, 4000);
   }
 
+*/
+
+  async function saveFace() {
+    const overlay = document.getElementById('scan-overlay');
+    overlay.style.display = 'flex';
+    document.getElementById('scan-view').srcObject = document.getElementById('video').srcObject;
+    parler("Analyse biométrique en cours. Restez immobile face à l'objectif.");
+
+    // Cette boucle va chercher votre visage 2 fois par seconde jusqu'à réussir
+    const checkFace = setInterval(async () => {
+        const videoEl = document.getElementById('scan-view');
+        const det = await faceapi.detectSingleFace(videoEl, new faceapi.TinyFaceDetectorOptions()).withFaceDescriptor();
+        
+        if(det) {
+            clearInterval(checkFace); // On arrête la boucle dès qu'il vous a reconnu
+            localStorage.setItem('desc', JSON.stringify(det.descriptor));
+            parler("Analyse réussie. Propriétaire enregistré.");
+            alert("✅ BIOMÉTRIE ENREGISTRÉE");
+            location.reload();
+        }
+    }, 500); 
+
+    // Sécurité : au bout de 20 secondes, si rien n'est trouvé, on ferme
+    setTimeout(() => { 
+        clearInterval(checkFace); 
+        if(!localStorage.getItem('desc')) {
+            alert("❌ ÉCHEC : Trop long ou mauvaise lumière.");
+            overlay.style.display = 'none';
+        }
+    }, 20000);
+  }
+
+
+  
   function toggleSystem() {
     systemActive = !systemActive; localStorage.setItem('active', systemActive);
     updateUI();
